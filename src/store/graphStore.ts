@@ -313,38 +313,32 @@ export const useGraphStore = create<RFState>((set, get) => ({
       
       // Find all connected output nodes
       const outgoingEdges = edges.filter(e => e.source === nodeId);
-      const outputNodeIds = outgoingEdges.map(e => e.target);
       
-      const outputNodes = nodes.filter(n => 
-        outputNodeIds.includes(n.id)
-      );
-      
-      // Update all connected nodes with the result
-      outputNodes.forEach(outputNode => {
-        if (outputNode.data.type === 'output') {
-          // Update output display nodes
-          updateNodeData(outputNode.id, { 
-            content: result.error ? String(result.error) : String(result.output),
-            outputs: [result.output]
+      for (const edge of outgoingEdges) {
+        const targetNode = nodes.find(n => n.id === edge.target);
+        
+        if (!targetNode) continue;
+        
+        if (targetNode.data.type === 'output') {
+          // For output nodes, directly update their content and outputs
+          updateNodeData(targetNode.id, { 
+            content: result.error ? String(result.error) : '',
+            outputs: [result.error ? { error: result.error } : result.output]
           });
-        } else if (outputNode.data.type === 'code') {
+        } else if (targetNode.data.type === 'code') {
           // For code nodes, update their inputs for later execution
-          const currentInputs = outputNode.data.inputs || {};
-          updateNodeData(outputNode.id, { 
+          const currentInputs = targetNode.data.inputs || {};
+          updateNodeData(targetNode.id, { 
             inputs: { 
               ...currentInputs,
               [node.data.label.toLowerCase().replace(/[^a-z0-9]/g, '_')]: result.output 
             }
           });
+          
+          // Optionally auto-execute connected code nodes
+          // Uncomment this if you want automatic propagation
+          // await get().executeNode(targetNode.id);
         }
-      });
-      
-      // Execute all code nodes that receive this node's output
-      const connectedCodeNodes = outputNodes.filter(n => n.data.type === 'code');
-      
-      // Execute them in sequence (could be made parallel if needed)
-      for (const codeNode of connectedCodeNodes) {
-        await get().executeNode(codeNode.id);
       }
     } catch (error) {
       console.error('Error executing node:', error);

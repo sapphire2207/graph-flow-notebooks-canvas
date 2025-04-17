@@ -45,6 +45,14 @@ export const CodeNode: React.FC<CodeNodeProps> = (props) => {
             Inputs: {Object.keys(data.inputs).length}
           </div>
         )}
+        
+        {data.outputs && data.outputs.length > 0 && (
+          <div className="absolute bottom-2 left-2 bg-gray-100 px-2 py-1 rounded text-xs">
+            Output: {typeof data.outputs[0] === 'object' 
+              ? (data.outputs[0]?.error ? 'Error' : 'Object') 
+              : String(data.outputs[0]).substring(0, 15) + (String(data.outputs[0]).length > 15 ? '...' : '')}
+          </div>
+        )}
       </div>
     </BaseNode>
   );

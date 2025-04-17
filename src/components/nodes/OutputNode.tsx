@@ -66,7 +66,7 @@ export const OutputNode: React.FC<OutputNodeProps> = (props) => {
   
   return (
     <BaseNode {...props}>
-      <div className="w-full h-full min-h-[100px] overflow-auto">
+      <div className="w-full h-full min-h-[100px] overflow-auto p-2">
         {renderOutput()}
       </div>
     </BaseNode>
