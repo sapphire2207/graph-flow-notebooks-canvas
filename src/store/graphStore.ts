@@ -22,6 +22,7 @@ export type NodeData = {
   content: string;
   type: 'code' | 'markdown' | 'output';
   outputs?: any[];
+  inputs?: Record<string, any>;
 };
 
 export interface SuperBlock {
@@ -60,10 +61,54 @@ export type RFState = {
 };
 
 // This will be replaced with actual Jupyter execution in the future
-const executeCode = async (code: string): Promise<any> => {
+const executeCode = async (code: string, inputs?: Record<string, any>): Promise<any> => {
   try {
     // Mock execution - in future, this will connect to Jupyter
-    const result = { output: `Executed: ${code}`, error: null };
+    // For now, let's make it handle some basic Python-like operations
+    let result;
+    
+    // Insert any inputs as variables at the beginning of the code
+    let codeToExecute = code;
+    let inputsString = '';
+    
+    if (inputs && Object.keys(inputs).length > 0) {
+      for (const [key, value] of Object.entries(inputs)) {
+        // In a real implementation, we'd properly serialize the inputs
+        // For now, just convert to string and inject as variable
+        inputsString += `${key} = ${JSON.stringify(value)}\n`;
+      }
+      codeToExecute = inputsString + codeToExecute;
+    }
+    
+    // Very simple mock execution to demonstrate data flow
+    // In a real implementation, this would send to Jupyter kernel
+    try {
+      // For demo purposes, support basic Python-like operations
+      if (codeToExecute.includes('import') || codeToExecute.includes('print')) {
+        result = { output: `Executed: ${codeToExecute}`, error: null };
+      } else {
+        // Extremely simple eval for demo purposes only
+        // This is ONLY for the mock and would NEVER be used in production
+        // In production, all code would be executed by Jupyter kernel
+        const evalResult = new Function(`
+          ${inputsString}
+          try {
+            return { value: eval(\`${code.replace(/`/g, '\\`')}\`) };
+          } catch (e) {
+            return { error: e.toString() };
+          }
+        `)();
+        
+        if (evalResult.error) {
+          result = { output: null, error: evalResult.error };
+        } else {
+          result = { output: evalResult.value, error: null };
+        }
+      }
+    } catch (e) {
+      result = { output: null, error: String(e) };
+    }
+    
     return result;
   } catch (error) {
     return { output: null, error: String(error) };
@@ -122,7 +167,8 @@ export const useGraphStore = create<RFState>((set, get) => ({
         label: `${type.charAt(0).toUpperCase() + type.slice(1)} Node`, 
         content: '',
         type,
-        outputs: []
+        outputs: [],
+        inputs: {}
       },
     };
     
@@ -236,31 +282,69 @@ export const useGraphStore = create<RFState>((set, get) => ({
     if (!node || node.data.type !== 'code') return;
     
     try {
-      // Execute the code
-      const result = await executeCode(node.data.content);
+      // Find all input nodes that connect to this node
+      const incomingEdges = edges.filter(e => e.target === nodeId);
+      const inputs: Record<string, any> = {};
       
-      // Find all connected output nodes
-      const connectedOutputNodeIds = edges
-        .filter(e => e.source === nodeId)
-        .map(e => e.target);
-        
-      const outputNodes = nodes.filter(n => 
-        connectedOutputNodeIds.includes(n.id) && n.data.type === 'output'
-      );
+      // Collect inputs from source nodes
+      for (const edge of incomingEdges) {
+        const sourceNode = nodes.find(n => n.id === edge.source);
+        if (sourceNode && sourceNode.data.outputs && sourceNode.data.outputs.length > 0) {
+          // Use source node output as input for this node
+          // The input name is derived from the source node label or ID to make it unique
+          const inputName = sourceNode.data.label
+            .toLowerCase()
+            .replace(/[^a-z0-9]/g, '_')
+            .replace(/_+/g, '_');
+          
+          inputs[inputName] = sourceNode.data.outputs[0];
+        }
+      }
       
-      // Update the output nodes with the result
-      outputNodes.forEach(outputNode => {
-        updateNodeData(outputNode.id, { 
-          content: result.error ? String(result.error) : String(result.output),
-          outputs: [result.output]
-        });
-      });
+      // Execute the code with inputs
+      const result = await executeCode(node.data.content, inputs);
       
-      // If there's an error, also update the code node to show it
+      // Update the code node with its outputs
       if (result.error) {
         updateNodeData(nodeId, { outputs: [{ error: result.error }] });
       } else {
         updateNodeData(nodeId, { outputs: [result.output] });
+      }
+      
+      // Find all connected output nodes
+      const outgoingEdges = edges.filter(e => e.source === nodeId);
+      const outputNodeIds = outgoingEdges.map(e => e.target);
+      
+      const outputNodes = nodes.filter(n => 
+        outputNodeIds.includes(n.id)
+      );
+      
+      // Update all connected nodes with the result
+      outputNodes.forEach(outputNode => {
+        if (outputNode.data.type === 'output') {
+          // Update output display nodes
+          updateNodeData(outputNode.id, { 
+            content: result.error ? String(result.error) : String(result.output),
+            outputs: [result.output]
+          });
+        } else if (outputNode.data.type === 'code') {
+          // For code nodes, update their inputs for later execution
+          const currentInputs = outputNode.data.inputs || {};
+          updateNodeData(outputNode.id, { 
+            inputs: { 
+              ...currentInputs,
+              [node.data.label.toLowerCase().replace(/[^a-z0-9]/g, '_')]: result.output 
+            }
+          });
+        }
+      });
+      
+      // Execute all code nodes that receive this node's output
+      const connectedCodeNodes = outputNodes.filter(n => n.data.type === 'code');
+      
+      // Execute them in sequence (could be made parallel if needed)
+      for (const codeNode of connectedCodeNodes) {
+        await get().executeNode(codeNode.id);
       }
     } catch (error) {
       console.error('Error executing node:', error);
