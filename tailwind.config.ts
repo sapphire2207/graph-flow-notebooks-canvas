@@ -52,6 +52,32 @@ export default {
 					DEFAULT: 'hsl(var(--card))',
 					foreground: 'hsl(var(--card-foreground))'
 				},
+                // GraphBlocks custom colors
+                graphblocks: {
+                    node: {
+                        DEFAULT: '#ffffff',
+                        border: '#e2e8f0',
+                        selected: '#9b87f5',
+                        hover: '#f8fafc',
+                        code: '#f1f5f9',
+                        markdown: '#f8fafc',
+                        output: '#f0f9ff',
+                        error: '#fee2e2'
+                    },
+                    connection: {
+                        DEFAULT: '#94a3b8',
+                        hover: '#475569',
+                        selected: '#9b87f5'
+                    },
+                    handle: {
+                        input: '#9333ea',
+                        output: '#3b82f6'
+                    },
+                    canvas: {
+                        DEFAULT: '#f8fafc',
+                        grid: '#e2e8f0'
+                    }
+                },
 				sidebar: {
 					DEFAULT: 'hsl(var(--sidebar-background))',
 					foreground: 'hsl(var(--sidebar-foreground))',

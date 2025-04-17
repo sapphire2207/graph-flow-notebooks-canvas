@@ -99,3 +99,131 @@
     @apply bg-background text-foreground;
   }
 }
+
+/* ReactFlow Custom Styles */
+.react-flow__node {
+  @apply rounded-lg border shadow-sm;
+}
+
+.react-flow__node.selected {
+  @apply border-graphblocks-node-selected;
+}
+
+.react-flow__node-code {
+  @apply bg-graphblocks-node-code;
+}
+
+.react-flow__node-markdown {
+  @apply bg-graphblocks-node-markdown;
+}
+
+.react-flow__node-output {
+  @apply bg-graphblocks-node-output;
+}
+
+.react-flow__handle {
+  @apply transition-all duration-150 border-2 w-3 h-3 rounded-full;
+}
+
+.react-flow__handle-source {
+  @apply bg-graphblocks-handle-output border-graphblocks-handle-output;
+}
+
+.react-flow__handle-target {
+  @apply bg-graphblocks-handle-input border-graphblocks-handle-input;
+}
+
+.react-flow__handle:hover {
+  @apply scale-125;
+}
+
+.react-flow__edge-path {
+  @apply stroke-graphblocks-connection stroke-2;
+}
+
+.react-flow__edge.selected .react-flow__edge-path {
+  @apply stroke-graphblocks-connection-selected;
+}
+
+.react-flow__edge:hover .react-flow__edge-path {
+  @apply stroke-graphblocks-connection-hover;
+}
+
+.react-flow__background {
+  @apply bg-graphblocks-canvas;
+}
+
+.react-flow__attribution {
+  @apply hidden;
+}
+
+.nodrag {
+  @apply pointer-events-auto;
+}
+
+.node-content {
+  @apply w-full h-full flex flex-col;
+}
+
+.node-header {
+  @apply px-3 py-2 flex justify-between items-center border-b;
+}
+
+.node-body {
+  @apply flex-1 p-3 overflow-auto max-h-[300px];
+}
+
+.node-footer {
+  @apply px-3 py-2 flex justify-between items-center border-t;
+}
+
+/* Code editor styles */
+.cm-editor {
+  @apply text-sm border rounded-md focus:outline-none;
+}
+
+/* Node resizing */
+.react-flow__node-resizer {
+  @apply rounded-lg;
+}
+
+.react-flow__resize-control {
+  @apply border-graphblocks-node-border;
+}
+
+/* Custom animations */
+@keyframes pulse-dot {
+  0% {
+    transform: scale(0.8);
+    opacity: 0.8;
+  }
+  50% {
+    transform: scale(1.2);
+    opacity: 1;
+  }
+  100% {
+    transform: scale(0.8);
+    opacity: 0.8;
+  }
+}
+
+.pulse-dot {
+  animation: pulse-dot 1.5s infinite;
+}
+
+/* Quick menu */
+.quick-menu {
+  @apply absolute bg-white rounded-lg shadow-lg overflow-hidden z-50 w-64;
+}
+
+.quick-menu-search {
+  @apply px-3 py-2 border-b;
+}
+
+.quick-menu-items {
+  @apply max-h-96 overflow-y-auto;
+}
+
+.quick-menu-item {
+  @apply px-3 py-2 hover:bg-gray-100 cursor-pointer flex items-center gap-2;
+}
